@@ -1,11 +1,27 @@
 // some documentation here
 // guh
 //
+
+/*
+user should be able to place script tag into index.html
+and it should magically work
+
+<div id="Lantern"></div>
+
+if there's no Lantern ID, then we assume the user is using API mode
+
+<form>
+    <label>Session (random 4-character code): </label>
+    <label for="opt1-input" id="opt1">Option 1</label>
+    <input type="radio" name="poll" id="opt1-input">
+    <button class="button" onclick="poller(this.parentNode); return false;">See how you compare</button>
+</form>
+*/
+
 const Lantern = (function() {
     // private
     var data;
-    let endpointCurrPos = "/current";
-    let endpointIsActive = "/active";
+    let endpointCurrPos = "/data";
     let eventName = "dataBroadcast";
     function _init(apiURL, updateFreq, dataHandler) {
         // TODO validate types
@@ -99,3 +115,30 @@ const Lantern = (function() {
         }
     };
 })();
+
+document.addEventListener('DOMContentLoaded', function(event) {
+    let L = document.getElementById('Lantern');
+    if (L !== null) {
+        // auto-mode
+        // build map
+        // check url parameters for
+        // 'code'
+        //
+    }
+});
+
+// TODO -- create demo pages
+// one for auto-created 
+
+// TODO -- android app
+// should have input field for URL of page where this API goes on
+// -- in a settings menu
+// should give auto-generated URL if base URL is provided
+// else, just display the port and read-only code
+// --
+// oh, well we need an API to connect to anyway
+// so it'll just be the same base URL
+// --
+// the app should have a TEST API button
+// similarly, the server should have a TEST endpoint
+// maybe a statistics endpoint too
