@@ -19,6 +19,7 @@ const Lantern = (function() {
     let eventName = "dataBroadcast";
     function _init(apiURL, code, updateFreq, dataHandler) {
         // TODO validate types
+console.log(apiURL);
         var obj = new Object();
         obj.apiURL = apiURL;
         obj.code = code;
@@ -43,6 +44,7 @@ const Lantern = (function() {
         };
     }
     async function _update() { // doesn't need to be async
+console.log(data);
         // assume data exists
         // https://dmitripavlutin.com/timeout-fetch-request/
         const controller = new AbortController();
@@ -61,6 +63,7 @@ const Lantern = (function() {
     // public
     return {
         init: function(apiURL="localhost:420", code="****", updateFreq=2, dataHandler=function(e) {return e;}) {
+console.log(apiURL);
             if (!_ready()) {
                 data = _init(apiURL, code, updateFreq, _wrap(dataHandler));
             }
@@ -155,7 +158,7 @@ if (Ld !== null) { // they want auto-mode
         let code = url.searchParams.get("code");
         let api = url.searchParams.get("api");
         console.log(code,api);
-        if (code !== null) {
+        if (code !== '') {
             // TODO
             // let flying = false;
             // map.on('flystart', function(){
@@ -164,12 +167,12 @@ if (Ld !== null) { // they want auto-mode
             // map.on('flyend', function(){
             //     flying = false;
             // });
-            if (api !== null) {
+            if (api !== '') {
                 Lantern.init(apiURL=api, code=code, updateFreq=3, dataHandler=function(e) {
                     if (e.error) {
                         Lantern.stopDataPing();
                         console.log(e);
-                        return
+                        return;
                     }
                     // update lat/lon position on map
                     currPos.setLatLng(e.location);
@@ -177,7 +180,8 @@ if (Ld !== null) { // they want auto-mode
                     map.flyTo(e.location);
                 });
             } else {
-                Lantern.init(code=code, updateFreq=3);
+                // apiURL=url.origin+url.pathname.replace(/\/+$/, '')+'/api'
+                Lantern.init(apiURL=url.pathname.replace(/\/+$/, '')+'/api', code=code, updateFreq=3);
             }
             Lantern.startDataPing();
         }
