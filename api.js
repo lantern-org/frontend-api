@@ -134,7 +134,7 @@ if (Ld !== null) { // they want auto-mode
                 <input type="text" name="api" id="form-api-url">
                 <input type="submit">
             </form>`;
-    
+
         let mapdiv = document.createElement('div');
         mapdiv.id = 'map';
         mapdiv.style.height = 3*window.innerHeight/5 + "px";
@@ -158,7 +158,7 @@ if (Ld !== null) { // they want auto-mode
         let code = url.searchParams.get("code");
         let api = url.searchParams.get("api");
         console.log(code,api);
-        if (code !== '') {
+        if (code && /^[A-Z0-9]{4}$/.test(code)) {
             // TODO
             // let flying = false;
             // map.on('flystart', function(){
@@ -167,26 +167,25 @@ if (Ld !== null) { // they want auto-mode
             // map.on('flyend', function(){
             //     flying = false;
             // });
-            if (api !== '') {
-                Lantern.init(apiURL=api, code=code, updateFreq=3, dataHandler=function(e) {
-                    if (e.error) {
-                        Lantern.stopDataPing();
-                        console.log(e);
-                        return;
-                    }
-                    // update lat/lon position on map
-                    if (!currPos.getLatLng().equals(e.location)) {
-                        currPos.setLatLng(e.location);
-                        currPath.addLatLng(e.location);
-                    }
-                    // if (!flying)
-                    map.flyTo(e.location);
-                    // map.fitBounds(currPath.getBounds());
-                });
-            } else {
-                // apiURL=url.origin+url.pathname.replace(/\/+$/, '')+'/api'
-                Lantern.init(apiURL=url.pathname.replace(/\/+$/, '')+'/api', code=code, updateFreq=3);
+            apiURL = api;
+            if (!api || api === '') {
+                apiURL = url.origin+url.pathname.replace(/\/+$/, '')+'/api';
             }
+            Lantern.init(apiURL=apiURL, code=code, updateFreq=1.5, dataHandler=function(e) {
+                if (e.error) {
+                    Lantern.stopDataPing();
+                    console.log(e);
+                    return;
+                }
+                // update lat/lon position on map
+                if (!currPos.getLatLng().equals(e.location)) {
+                    currPos.setLatLng(e.location);
+                    currPath.addLatLng(e.location);
+                }
+                // if (!flying)
+                // map.flyTo(e.location);
+                map.fitBounds(currPath.getBounds());
+            });
             Lantern.startDataPing();
         }
     };
