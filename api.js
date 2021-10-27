@@ -19,7 +19,6 @@ const Lantern = (function() {
     let eventName = "dataBroadcast";
     function _init(apiURL, code, updateFreq, dataHandler) {
         // TODO validate types
-console.log(apiURL);
         var obj = new Object();
         obj.apiURL = apiURL;
         obj.code = code;
@@ -44,26 +43,26 @@ console.log(apiURL);
         };
     }
     async function _update() { // doesn't need to be async
-console.log(data);
         // assume data exists
         // https://dmitripavlutin.com/timeout-fetch-request/
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), 5*1000); // default 5 seconds
+        // console.log(data.apiURL+locationEndpoint+"/"+data.code);
+        // TODO -- if user doesn't put http or https, we have to have it
         await fetch(data.apiURL+locationEndpoint+"/"+data.code, { // can change await
                 cache: 'no-cache',
                 referrerPolicy: 'no-referrer',
                 timeout: data.updateFreq * 1000,
                 signal: controller.signal
             })
-        .then(response => response.json() )
-        .then(data => document.dispatchEvent(new CustomEvent(eventName, { detail:data })) )
-        .catch(err => console.log(err) );
+        .then( response => response.json() )
+        .then( data => document.dispatchEvent(new CustomEvent(eventName, { detail:data })) )
+        .catch( err => console.log(err) );
         clearTimeout(id);
     }
     // public
     return {
-        init: function(apiURL="localhost:420", code="****", updateFreq=2, dataHandler=function(e) {return e;}) {
-console.log(apiURL);
+        init: function(apiURL="localhost:1025", code="****", updateFreq=2, dataHandler=function(e) {return e;}) {
             if (!_ready()) {
                 data = _init(apiURL, code, updateFreq, _wrap(dataHandler));
             }
@@ -152,7 +151,8 @@ if (Ld !== null) { // they want auto-mode
             subdomains: 'abcd'
         }).addTo(map);
         let currPos = L.marker([40.781329, -73.966671]).addTo(map); // TODO -- make it change color when live (this is default position)
-    
+        // keep latlon as polyline
+        let currPath = L.polyline([], {color:'red'}).addTo(map);
         // https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
         let url = new URL(window.location.href);
         let code = url.searchParams.get("code");
@@ -175,9 +175,13 @@ if (Ld !== null) { // they want auto-mode
                         return;
                     }
                     // update lat/lon position on map
-                    currPos.setLatLng(e.location);
+                    if (!currPos.getLatLng().equals(e.location)) {
+                        currPos.setLatLng(e.location);
+                        currPath.addLatLng(e.location);
+                    }
                     // if (!flying)
                     map.flyTo(e.location);
+                    // map.fitBounds(currPath.getBounds());
                 });
             } else {
                 // apiURL=url.origin+url.pathname.replace(/\/+$/, '')+'/api'
@@ -185,7 +189,7 @@ if (Ld !== null) { // they want auto-mode
             }
             Lantern.startDataPing();
         }
-    }
+    };
     // DEPENDENCY:
     // https://leafletjs.com/download.html
     // we've gotten to this point (this script should be loaded after leaflet, and/or in the body of the page),
