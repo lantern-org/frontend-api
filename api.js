@@ -310,6 +310,7 @@ if (Ld !== null) {
       Lantern.startDataPing();
       // currPos.setIcon(icon("green"));
     }
+    document.dispatchEvent(new CustomEvent("onLanternAutoLoaded", { detail: {"Lantern": Lantern, "root": Ld, "Leaflet": L, "map": map} }));
   };
   // DEPENDENCY:
   // https://leafletjs.com/download.html
