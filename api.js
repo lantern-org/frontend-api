@@ -160,7 +160,7 @@ if (Ld !== null) {
                         position: relative;
                         border-radius: 3rem 3rem 0;
                         transform: rotate(45deg);
-                        border: 1px solid #FFFFFF
+                        border: 2px solid #000000
                     " />`,
         });
       }
@@ -183,26 +183,30 @@ if (Ld !== null) {
     mapdiv.style.height = (3 * window.innerHeight) / 5 + "px";
     // mapdiv.style.width = "75%"; // todo
     Ld.appendChild(mapdiv);
+    // let center = [40.781329, -73.966671]; // central park
+    let center = [40.710480, -73.959649]; // williamsburg bridge
     let map = L.map(mapdiv, {
-      center: [40.781329, -73.966671],
+      center: center,
       zoom: 12,
+      fullscreenControl: true, // https://github.com/Leaflet/Leaflet.fullscreen
     });
     // blessed http://leaflet-extras.github.io/leaflet-providers/preview/index.html
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-      {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19,
-        subdomains: "abcd",
-      }
-    ).addTo(map);
-    let currPos = L.marker([40.781329, -73.966671], {
-      icon: icon("blue"),
+    // let CartoDB_DarkMatter = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    //   subdomains: 'abcd',
+    //   maxZoom: 19
+    // });
+    let OpenStreetMap_Mapnik = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+    OpenStreetMap_Mapnik.addTo(map);
+    let currPos = L.marker(center, {
+      icon: icon("#3366ff"), // blue
     }).addTo(map);
-    let snapper = 0; // 0,1,2 = free,snapToPos,snapToPath
+    // todo https://github.com/CliffCloud/Leaflet.EasyButton/
     // add toggle to snap to currPos
-    // https://github.com/CliffCloud/Leaflet.EasyButton/
+    let snapper = 0; // 0,1,2 = free,snapToPos,snapToPath
     L.Control.Snapper = L.Control.extend({
       onAdd: function (_map) {
         // TODO -- move to custom styling with classes -- helpful for switching themes
@@ -216,7 +220,7 @@ if (Ld !== null) {
           rad.id = "radio-" + i;
           rad.style.width = "16px";
           rad.style.height = "16px";
-          rad.style.background = "white";
+          rad.style.background = "black";
           rad.style.borderRadius = "5px";
           rad.style.border = "2px solid #555";
           this["_rad" + i] = rad;
@@ -229,7 +233,7 @@ if (Ld !== null) {
           //
           let lbl = L.DomUtil.create("label", "", div);
           lbl.for = "centerPosCheckbox";
-          lbl.style.color = "white";
+          lbl.style.color = "black";
           lbl.style.fontSize = "20px";
           lbl.innerText = txt[i];
           L.DomUtil.create("br", "", div);
@@ -246,6 +250,59 @@ if (Ld !== null) {
       return new L.Control.Snapper(opts);
     };
     L.control.snapper({ position: "bottomleft" }).addTo(map);
+    // add "locate me" button
+    let userLocation = L.marker(center, {
+      icon: icon("#e600e6"), // magenta
+      opacity: 0,
+    }).addTo(map);
+    L.Control.LocateMe = L.Control.extend({
+      onAdd: function(_map) {
+        let btn = L.DomUtil.create("button");
+        let text = "Locate yourself on the map";
+        btn.innerText = text;
+        btn.style.color = "black";
+        btn.style.backgroundColor = "#ff99ff";
+        btn.style.fontSize = "20px";
+        this["_locateBtn"] = btn;
+        L.DomEvent.on(btn, "click", (e) => {
+          console.log(e);
+          btn.innerText += " (loading ...)";
+          btn.disabled = true;
+          if (!"geolocation" in navigator) {
+            alert("Geolocation is not supported in your browser");
+            btn.innerText = text;
+            btn.disabled = false;
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              userLocation.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+              userLocation.setOpacity(1);
+              btn.innerText = text;
+              btn.disabled = false;
+            },
+            (err) => {
+              alert("Unable to get your location: " + err.message);
+              btn.innerText = text;
+              btn.disabled = false;
+            },
+            {
+              maximumAge: 0, // always get a new value
+              timeout: 10000, // wait max 10 sec
+              enableHighAccuracy: true,
+            }
+          );
+        });
+        return btn;
+      },
+      onRemove: function (_map) {
+        L.DomEvent.off(this["_locateBtn"]);
+      },
+    });
+    L.control.locateMe = function (opts) {
+      return new L.Control.LocateMe(opts);
+    };
+    L.control.locateMe({ position: "bottomleft"}).addTo(map);
     // keep latlon as polyline
     let currPath = L.polyline([], { color: "red" }).addTo(map);
     // https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
@@ -316,20 +373,24 @@ if (Ld !== null) {
   // https://leafletjs.com/download.html
   // we've gotten to this point (this script should be loaded after leaflet, and/or in the body of the page),
   // so check if L (leaflet) exists
-  if (typeof L == "undefined") {
+  let loadLink = function(href, rel) {
     let link = document.createElement("link"); // check onload?
-    link.rel = "stylesheet";
-    link.href = "https://unpkg.com/leaflet@1.7.1/dist/leaflet.css";
-    // link.integrity = "sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==";
-    // link.crossorigin = "anonymous";
+    link.rel = rel;
+    link.href = href;
     document.head.appendChild(link);
-    //
+  };
+  let loadScript = function(src, onload) {
     let script = document.createElement("script");
-    script.src = "https://unpkg.com/leaflet@1.7.1/dist/leaflet.js";
-    script.onload = start;
-    // script.integrity = "sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==";
-    // script.crossorigin = "anonymous";
+    script.src = src;
+    script.onload = onload;
     document.head.appendChild(script);
+  };
+  if (typeof L == "undefined") { // meh
+    loadLink("https://unpkg.com/leaflet@1.7.1/dist/leaflet.css", "stylesheet");
+    loadLink("https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css", "stylesheet");
+    loadScript("https://unpkg.com/leaflet@1.7.1/dist/leaflet.js", ()=>{
+      loadScript("https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js", start);
+    });
   } else {
     start();
   }
