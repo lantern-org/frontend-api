@@ -168,21 +168,24 @@ if (Ld !== null) {
     };
   })();
   // entrypoint
-  let start = function () {
+  let start = async function () {
     // console.log(event);
-    Ld.innerHTML = `<form style="text-align: center;">
-                <label for="form-code">Session (random 4-character code): </label>
-                <input type="text" name="code" id="form-code">
-                <label for="form-api-url">URL (leave blank if it's the current page): </label>
-                <input type="text" name="api" id="form-api-url">
-                <input type="submit">
-            </form>`;
-
+    Ld.innerHTML = "";
+    let form = document.createElement("form");
+    form.innerHTML = `
+      <label for="form-code">Session (random 4-character code): </label>
+      <input type="text" name="code" id="form-code">
+      <label for="form-api-url">URL (leave blank if it's the current page): </label>
+      <input type="text" name="api" id="form-api-url">
+      <input type="submit">`
+    form.style.textAlign = "center";
     let mapdiv = document.createElement("div");
     mapdiv.id = "map";
     mapdiv.style.height = (3 * window.innerHeight) / 5 + "px";
     // mapdiv.style.width = "75%"; // todo
     Ld.appendChild(mapdiv);
+    Ld.appendChild(document.createElement("br"));
+    Ld.appendChild(form);
     // let center = [40.781329, -73.966671]; // central park
     let center = [40.710480, -73.959649]; // williamsburg bridge
     let map = L.map(mapdiv, {
@@ -234,7 +237,7 @@ if (Ld !== null) {
           let lbl = L.DomUtil.create("label", "", div);
           lbl.for = "centerPosCheckbox";
           lbl.style.color = "black";
-          lbl.style.fontSize = "20px";
+          lbl.style.fontSize = "18px";
           lbl.innerText = txt[i];
           L.DomUtil.create("br", "", div);
         }
@@ -258,15 +261,15 @@ if (Ld !== null) {
     L.Control.LocateMe = L.Control.extend({
       onAdd: function(_map) {
         let btn = L.DomUtil.create("button");
-        let text = "Locate yourself on the map";
+        let text = "Locate yourself";
         btn.innerText = text;
         btn.style.color = "black";
         btn.style.backgroundColor = "#ff99ff";
-        btn.style.fontSize = "20px";
+        btn.style.fontSize = "16px";
         this["_locateBtn"] = btn;
         L.DomEvent.on(btn, "click", (e) => {
           console.log(e);
-          btn.innerText += " (loading ...)";
+          btn.innerText += " (...)";
           btn.disabled = true;
           if (!"geolocation" in navigator) {
             alert("Geolocation is not supported in your browser");
@@ -307,9 +310,17 @@ if (Ld !== null) {
     let currPath = L.polyline([], { color: "red" }).addTo(map);
     // https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
     let url = new URL(window.location.href);
-    let code = url.searchParams.get("code");
     let api = url.searchParams.get("api");
-    console.log(code, api);
+    let apiURL = api;
+    if (!api || api === "") {
+      apiURL = url.origin + url.pathname.replace(/\/+$/, "") + "/api";
+    }
+    let code = url.searchParams.get("code");
+    if (!code || code === "") {
+      console.log("fetching /rooms");
+      let rooms = await fetch(apiURL + "/rooms").then(res => res.json()).catch(_ => []);
+      code = rooms[0] || "";
+    }
     if (code && /^[A-Z0-9]{4}$/.test(code)) {
       // TODO
       // let flying = false;
@@ -319,10 +330,6 @@ if (Ld !== null) {
       // map.on('flyend', function(){
       //     flying = false;
       // });
-      apiURL = api;
-      if (!api || api === "") {
-        apiURL = url.origin + url.pathname.replace(/\/+$/, "") + "/api";
-      }
       Lantern.init(
         (apiURL = apiURL),
         (code = code),
