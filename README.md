@@ -9,6 +9,6 @@ const handler = function (event) {
 const L = Lantern.init(
   "example.com/api", // server api hostname
   5, // update frequency, in seconds
-  handler // called when the api receives data from server
+  handler, // called when the api receives data from server
 );
 ```

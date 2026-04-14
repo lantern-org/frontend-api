@@ -62,7 +62,7 @@ const Lantern = (function () {
     })
       .then((response) => response.json())
       .then((data) =>
-        document.dispatchEvent(new CustomEvent(eventName, { detail: data }))
+        document.dispatchEvent(new CustomEvent(eventName, { detail: data })),
       )
       .catch(console.log);
     clearTimeout(id);
@@ -75,7 +75,7 @@ const Lantern = (function () {
       updateFreq = 2,
       dataHandler = function (e) {
         return e;
-      }
+      },
     ) {
       if (!_ready()) {
         data = _init(apiURL, code, updateFreq, _wrap(dataHandler));
@@ -177,7 +177,7 @@ if (Ld !== null) {
       <input type="text" name="code" id="form-code">
       <label for="form-api-url">URL (leave blank if it's the current page): </label>
       <input type="text" name="api" id="form-api-url">
-      <input type="submit">`
+      <input type="submit">`;
     form.style.textAlign = "center";
     let mapdiv = document.createElement("div");
     mapdiv.id = "map";
@@ -187,7 +187,7 @@ if (Ld !== null) {
     Ld.appendChild(document.createElement("br"));
     Ld.appendChild(form);
     // let center = [40.781329, -73.966671]; // central park
-    let center = [40.710480, -73.959649]; // williamsburg bridge
+    let center = [40.71048, -73.959649]; // williamsburg bridge
     let map = L.map(mapdiv, {
       center: center,
       zoom: 12,
@@ -199,10 +199,14 @@ if (Ld !== null) {
     //   subdomains: 'abcd',
     //   maxZoom: 19
     // });
-    let OpenStreetMap_Mapnik = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    });
+    let OpenStreetMap_Mapnik = L.tileLayer(
+      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      },
+    );
     OpenStreetMap_Mapnik.addTo(map);
     let currPos = L.marker(center, {
       icon: icon("#3366ff"), // blue
@@ -259,7 +263,7 @@ if (Ld !== null) {
       opacity: 0,
     }).addTo(map);
     L.Control.LocateMe = L.Control.extend({
-      onAdd: function(_map) {
+      onAdd: function (_map) {
         let btn = L.DomUtil.create("button");
         let text = "Locate yourself";
         btn.innerText = text;
@@ -271,7 +275,7 @@ if (Ld !== null) {
           console.log(e);
           btn.innerText += " (...)";
           btn.disabled = true;
-          if (!"geolocation" in navigator) {
+          if ((!"geolocation") in navigator) {
             alert("Geolocation is not supported in your browser");
             btn.innerText = text;
             btn.disabled = false;
@@ -279,7 +283,10 @@ if (Ld !== null) {
           }
           navigator.geolocation.getCurrentPosition(
             (pos) => {
-              userLocation.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+              userLocation.setLatLng([
+                pos.coords.latitude,
+                pos.coords.longitude,
+              ]);
               userLocation.setOpacity(1);
               btn.innerText = text;
               btn.disabled = false;
@@ -293,7 +300,7 @@ if (Ld !== null) {
               maximumAge: 0, // always get a new value
               timeout: 10000, // wait max 10 sec
               enableHighAccuracy: true,
-            }
+            },
           );
         });
         return btn;
@@ -305,7 +312,7 @@ if (Ld !== null) {
     L.control.locateMe = function (opts) {
       return new L.Control.LocateMe(opts);
     };
-    L.control.locateMe({ position: "bottomleft"}).addTo(map);
+    L.control.locateMe({ position: "bottomleft" }).addTo(map);
     // keep latlon as polyline
     let currPath = L.polyline([], { color: "red" }).addTo(map);
     // https://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-get-parameters
@@ -318,7 +325,9 @@ if (Ld !== null) {
     let code = url.searchParams.get("code");
     if (!code || code === "") {
       console.log("fetching /rooms");
-      let rooms = await fetch(apiURL + "/rooms").then(res => res.json()).catch(_ => []);
+      let rooms = await fetch(apiURL + "/rooms")
+        .then((res) => res.json())
+        .catch((_) => []);
       code = rooms[0] || "";
     }
     if (code && /^[A-Z0-9]{4}$/.test(code)) {
@@ -369,34 +378,45 @@ if (Ld !== null) {
             default:
               break;
           }
-        })
+        }),
       );
       Lantern.startDataPing();
       // currPos.setIcon(icon("green"));
     }
-    document.dispatchEvent(new CustomEvent("onLanternAutoLoaded", { detail: {"Lantern": Lantern, "root": Ld, "Leaflet": L, "map": map} }));
+    document.dispatchEvent(
+      new CustomEvent("onLanternAutoLoaded", {
+        detail: { Lantern: Lantern, root: Ld, Leaflet: L, map: map },
+      }),
+    );
   };
   // DEPENDENCY:
   // https://leafletjs.com/download.html
   // we've gotten to this point (this script should be loaded after leaflet, and/or in the body of the page),
   // so check if L (leaflet) exists
-  let loadLink = function(href, rel) {
+  let loadLink = function (href, rel) {
     let link = document.createElement("link"); // check onload?
     link.rel = rel;
     link.href = href;
     document.head.appendChild(link);
   };
-  let loadScript = function(src, onload) {
+  let loadScript = function (src, onload) {
     let script = document.createElement("script");
     script.src = src;
     script.onload = onload;
     document.head.appendChild(script);
   };
-  if (typeof L == "undefined") { // meh
+  if (typeof L == "undefined") {
+    // meh
     loadLink("https://unpkg.com/leaflet@1.7.1/dist/leaflet.css", "stylesheet");
-    loadLink("https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css", "stylesheet");
-    loadScript("https://unpkg.com/leaflet@1.7.1/dist/leaflet.js", ()=>{
-      loadScript("https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js", start);
+    loadLink(
+      "https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css",
+      "stylesheet",
+    );
+    loadScript("https://unpkg.com/leaflet@1.7.1/dist/leaflet.js", () => {
+      loadScript(
+        "https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js",
+        start,
+      );
     });
   } else {
     start();
